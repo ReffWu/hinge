@@ -32,3 +32,7 @@ Hinge speaks your Mac's language: English, Simplified and Traditional Chinese, J
 Feature requests are welcome. [Open an issue](https://github.com/Noveum/hinge/issues) or just shoot a PR. Small fixes, smoother motion, fun ideas: come play.
 
 [Development checks and setup](CHECKS.md).
+
+## Translations
+
+Translations live in `Resources/<language>.lproj/Localizable.strings`, one file per language. Keep the English keys identical across files and preserve format placeholders such as `%@` and `%lld`. Both Make and Xcode bundle these files directly.
