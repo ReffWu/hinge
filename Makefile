@@ -9,5 +9,5 @@ build:
 	xcrun swiftc -swift-version 5 -O -target arm64-apple-macosx14.0 $(SOURCES) -o "$(APP)/Contents/MacOS/Hinge" -framework SwiftUI -framework AppKit -framework IOKit -framework ScreenCaptureKit -framework MetalKit -framework MetalPerformanceShaders
 	cp Info.plist "$(APP)/Contents/Info.plist"
 	cp Resources/*.icns Resources/*.metal "$(APP)/Contents/Resources/"
-	cp -R Resources/*.lproj "$(APP)/Contents/Resources/"
+	cp -R Resources/Localizations/*.lproj "$(APP)/Contents/Resources/"
 	codesign --force --sign "$(if $(SIGN_IDENTITY),$(SIGN_IDENTITY),-)" "$(APP)"

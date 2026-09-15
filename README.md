@@ -35,4 +35,4 @@ Feature requests are welcome. [Open an issue](https://github.com/Noveum/hinge/is
 
 ## Translations
 
-Translations live in `Resources/<language>.lproj/Localizable.strings`, one file per language, including Hindi. On first launch, Hinge saves the best supported match for the system language. Later launches retain that choice until you change it in Settings. Keep the English keys identical across files and preserve format placeholders such as `%@` and `%lld`. Both Make and Xcode bundle these files directly.
+Translations live in `Resources/Localizations/<language>.lproj/Localizable.strings`, one file per language, including Hindi. On first launch, Hinge saves the best supported match for the system language. Later launches retain that choice until you change it in Settings. Keep the English keys identical across files and preserve format placeholders such as `%@` and `%lld`. Both Make and Xcode bundle these files directly.
