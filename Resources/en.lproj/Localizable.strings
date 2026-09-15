@@ -7,6 +7,9 @@
 "Beside the folded desktop" = "Beside the folded desktop";
 "Black" = "Black";
 "Blur" = "Blur";
+"Blur builds toward the top and fades out near the hinge." = "Blur builds toward the top and fades out near the hinge.";
+"Blur by distance" = "Blur by distance";
+"Blur grows with distance from the open screen, so the hinge edge stays sharp." = "Blur grows with distance from the open screen, so the hinge edge stays sharp.";
 "Connected" = "Connected";
 "Controls" = "Controls";
 "Could not allocate the desktop texture." = "Could not allocate the desktop texture.";
@@ -16,6 +19,7 @@
 "Could not prepare the fold pipeline." = "Could not prepare the fold pipeline.";
 "Could not update Launch at Login: %@" = "Could not update Launch at Login: %@";
 "Could not update the captured windows: %@" = "Could not update the captured windows: %@";
+"Crop from the top" = "Crop from the top";
 "Effect strength" = "Effect strength";
 "Getting the desktop and the sensor ready." = "Getting the desktop and the sensor ready.";
 "GitHub" = "GitHub";
@@ -60,6 +64,7 @@
 "The desktop renderer is missing. Rebuild the app." = "The desktop renderer is missing. Rebuild the app.";
 "The desktop renderer stopped: %@" = "The desktop renderer stopped: %@";
 "The lid sensor stopped responding. Hinge turns back on as soon as it reconnects." = "The lid sensor stopped responding. Hinge turns back on as soon as it reconnects.";
+"The top of the desktop slides out of view as the lid closes." = "The top of the desktop slides out of view as the lid closes.";
 "This Mac doesn't appear to have a lid angle sensor, so Hinge can't follow the lid." = "This Mac doesn't appear to have a lid angle sensor, so Hinge can't follow the lid.";
 "Turn Hinge on or off" = "Turn Hinge on or off";
 "Turn Hinge on to follow the lid." = "Turn Hinge on to follow the lid.";

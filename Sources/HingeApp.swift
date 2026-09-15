@@ -8,6 +8,10 @@ struct HingeApp: App {
   @StateObject private var desktop = LiveDesktop()
   @StateObject private var navigator = Navigator()
 
+  init() {
+    _ = AppLanguage.atLaunch
+  }
+
   var body: some Scene {
     Window("Hinge", id: "main") {
       MainView(desktop: desktop, navigator: navigator)

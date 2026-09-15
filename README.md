@@ -25,7 +25,7 @@ open build/Hinge.app
 
 Allow Screen Recording, reopen Hinge if prompted, and turn it on. It turns itself back on the next time you open it. The starting angle is 100°. Prefer something else? Get comfy and click **Set open position**. Hinge remembers.
 
-Hinge speaks your Mac's language: English, Simplified and Traditional Chinese, Japanese, Korean, German, French, Spanish, Italian, Brazilian Portuguese, Russian, Dutch, Turkish, Polish, Arabic and Vietnamese. To use a different one, pick it under **Settings > Controls > Language**.
+Hinge speaks your Mac's language: English, Simplified and Traditional Chinese, Japanese, Korean, German, French, Spanish, Italian, Brazilian Portuguese, Russian, Dutch, Turkish, Polish, Arabic, Vietnamese and Hindi. To use a different one, pick it under **Settings > Controls > Language**.
 
 ## Got an idea?
 
@@ -35,4 +35,4 @@ Feature requests are welcome. [Open an issue](https://github.com/Noveum/hinge/is
 
 ## Translations
 
-Translations live in `Resources/<language>.lproj/Localizable.strings`, one file per language. Keep the English keys identical across files and preserve format placeholders such as `%@` and `%lld`. Both Make and Xcode bundle these files directly.
+Translations live in `Resources/<language>.lproj/Localizable.strings`, one file per language, including Hindi. On first launch, Hinge saves the best supported match for the system language. Later launches retain that choice until you change it in Settings. Keep the English keys identical across files and preserve format placeholders such as `%@` and `%lld`. Both Make and Xcode bundle these files directly.

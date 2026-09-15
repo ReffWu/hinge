@@ -22,6 +22,7 @@
 		<string>vi</string>
 		<string>zh-Hans</string>
 		<string>zh-Hant</string>
+		<string>hi</string>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>Hinge</string>

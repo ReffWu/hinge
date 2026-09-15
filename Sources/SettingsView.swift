@@ -66,8 +66,8 @@ struct SettingsView: View {
       }
       SettingsDivider()
       SettingsRow(
-        "crop", tint: .teal, title: "Crop from the top",
-        subtitle: "The top of the desktop slides out of view as the lid closes."
+        "crop", tint: .teal, title: String(localized: "Crop from the top"),
+        subtitle: String(localized: "The top of the desktop slides out of view as the lid closes.")
       ) {
         Toggle(
           "Crop from the top",
@@ -79,10 +79,12 @@ struct SettingsView: View {
       }
       SettingsDivider()
       SettingsRow(
-        "camera.aperture", tint: .purple, title: "Blur by distance",
+        "camera.aperture", tint: .purple, title: String(localized: "Blur by distance"),
         subtitle: desktop.blursByDistance
-          ? "Blur grows with distance from the open screen, so the hinge edge stays sharp."
-          : "Blur builds toward the top and fades out near the hinge."
+          ? String(
+            localized:
+              "Blur grows with distance from the open screen, so the hinge edge stays sharp.")
+          : String(localized: "Blur builds toward the top and fades out near the hinge.")
       ) {
         Toggle(
           "Blur by distance",
@@ -138,7 +140,6 @@ struct SettingsView: View {
               AppLanguage.choose($0)
             })
         ) {
-          Text("System Language").tag("")
           ForEach(AppLanguage.available, id: \.self) { code in
             Text(verbatim: AppLanguage.name(of: code)).tag(code)
           }
@@ -233,12 +234,20 @@ struct SettingsView: View {
   }
 }
 
-private enum AppLanguage {
+enum AppLanguage {
   static let atLaunch = current
 
   static var current: String {
     let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")
-    return (domain?["AppleLanguages"] as? [String])?.first ?? ""
+    if let saved = (domain?["AppleLanguages"] as? [String])?.first, !saved.isEmpty {
+      return saved
+    }
+    let detected =
+      Bundle.preferredLocalizations(
+        from: available, forPreferences: Locale.preferredLanguages
+      ).first ?? "en"
+    choose(detected)
+    return detected
   }
 
   static let available = Set(Bundle.main.localizations).subtracting(["Base"]).sorted {
@@ -251,11 +260,7 @@ private enum AppLanguage {
   }
 
   static func choose(_ code: String) {
-    if code.isEmpty {
-      UserDefaults.standard.removeObject(forKey: "AppleLanguages")
-    } else {
-      UserDefaults.standard.set([code], forKey: "AppleLanguages")
-    }
+    UserDefaults.standard.set([code], forKey: "AppleLanguages")
   }
 
   static func relaunch() {

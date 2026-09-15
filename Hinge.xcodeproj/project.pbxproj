@@ -194,6 +194,7 @@
 				<string>931FCD7B91696BF504041199</string>
 				<string>61CBDB8F979D36CA892B91C8</string>
 				<string>379C3C0E9C4614AF3A01076B</string>
+				<string>0278DE9A6B04F8478495CAD6</string>
 			</array>
 			<key>name</key>
 			<string>Localizable.strings</string>
@@ -566,6 +567,7 @@
 				<string>vi</string>
 				<string>zh-Hans</string>
 				<string>zh-Hant</string>
+				<string>hi</string>
 			</array>
 			<key>mainGroup</key>
 			<string>B28B7AF69320201D1CF206EB</string>
@@ -785,6 +787,19 @@
 			<string>en</string>
 			<key>path</key>
 			<string>en.lproj/Localizable.strings</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>0278DE9A6B04F8478495CAD6</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>text.plist.strings</string>
+			<key>name</key>
+			<string>hi</string>
+			<key>path</key>
+			<string>hi.lproj/Localizable.strings</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
