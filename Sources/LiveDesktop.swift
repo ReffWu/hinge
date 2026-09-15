@@ -32,17 +32,24 @@ final class DesktopPanel: NSPanel {
 final class LiveDesktop: NSObject, ObservableObject {
   @Published private(set) var isActive = false
   @Published private(set) var isStarting = false
+  @Published private(set) var isWaitingForDisplay = false
   @Published private(set) var sensorAvailable = false
   @Published private(set) var openAngle: Double
   @Published private(set) var effectStrength: Double
   @Published private(set) var sideFill: SideFill
+  @Published private(set) var cropsTop: Bool
+  @Published private(set) var blursByDistance: Bool
   @Published private(set) var error: String?
   @Published private(set) var needsPermission = false
   @Published private(set) var isEnabled = UserDefaults.standard.bool(forKey: "effectEnabled")
   private static let missingSensorMessage =
-    "This Mac doesn't appear to have a lid angle sensor, so Hinge can't follow the lid."
+    String(
+      localized:
+        "This Mac doesn't appear to have a lid angle sensor, so Hinge can't follow the lid.")
   private static let sensorDroppedMessage =
-    "The lid sensor stopped responding. Hinge turns back on as soon as it reconnects."
+    String(
+      localized:
+        "The lid sensor stopped responding. Hinge turns back on as soon as it reconnects.")
   private let sensor = LidSensor()
   private var sensorMissing = false
   private let motion: LidMotion
@@ -58,6 +65,7 @@ final class LiveDesktop: NSObject, ObservableObject {
   private var restoringAtLaunch = UserDefaults.standard.bool(forKey: "effectEnabled")
   private var wakeTask: Task<Void, Never>?
   private var displayTask: Task<Void, Never>?
+  private var lastCaptureRecovery = 0.0
   private var capturedDisplayID: CGDirectDisplayID?
   private var includedWindowIDs = Set<CGWindowID>()
 
@@ -70,6 +78,8 @@ final class LiveDesktop: NSObject, ObservableObject {
     self.openAngle = openAngle
     self.effectStrength = effectStrength
     sideFill = UserDefaults.standard.string(forKey: "sideFill").flatMap(SideFill.init) ?? .blur
+    cropsTop = UserDefaults.standard.object(forKey: "cropsTop") as? Bool ?? true
+    blursByDistance = UserDefaults.standard.object(forKey: "blursByDistance") as? Bool ?? true
     motion = LidMotion(openAngle: openAngle)
     super.init()
     let motion = motion
@@ -149,7 +159,7 @@ final class LiveDesktop: NSObject, ObservableObject {
 
   func setOpenPosition() {
     guard let angle = motion.calibrate() else {
-      error = "Open the lid to your comfortable viewing position first."
+      error = String(localized: "Open the lid to your comfortable viewing position first.")
       return
     }
     openAngle = angle
@@ -174,6 +184,18 @@ final class LiveDesktop: NSObject, ObservableObject {
     renderer?.sideFill = fill
   }
 
+  func setCropsTop(_ enabled: Bool) {
+    cropsTop = enabled
+    UserDefaults.standard.set(enabled, forKey: "cropsTop")
+    renderer?.cropsTop = enabled
+  }
+
+  func setBlursByDistance(_ enabled: Bool) {
+    blursByDistance = enabled
+    UserDefaults.standard.set(enabled, forKey: "blursByDistance")
+    renderer?.blursByDistance = enabled
+  }
+
   func start(promptForPermission: Bool = true) async {
     guard !isStarting, !isActive else { return }
     error = nil
@@ -187,9 +209,15 @@ final class LiveDesktop: NSObject, ObservableObject {
       CGPreflightScreenCaptureAccess() || (promptForPermission && CGRequestScreenCaptureAccess())
     guard hasScreenAccess else {
       needsPermission = true
-      error = "Allow Hinge in Screen Recording settings, then quit and reopen it."
+      error = String(
+        localized: "Allow Hinge in Screen Recording settings, then quit and reopen it.")
       return
     }
+    guard builtInScreenAvailable else {
+      isWaitingForDisplay = true
+      return
+    }
+    isWaitingForDisplay = false
     isStarting = true
     sensor.setTracking(true)
     let session = UUID()
@@ -198,6 +226,8 @@ final class LiveDesktop: NSObject, ObservableObject {
       let renderer = try DesktopRenderer(resources: .main, motion: motion)
       renderer.effectStrength = Float(effectStrength)
       renderer.sideFill = sideFill
+      renderer.cropsTop = cropsTop
+      renderer.blursByDistance = blursByDistance
       let content = try await SCShareableContent.excludingDesktopWindows(
         false, onScreenWindowsOnly: false)
       guard self.session == session else { return }
@@ -207,7 +237,9 @@ final class LiveDesktop: NSObject, ObservableObject {
             == display.displayID
         })
       else {
-        throw DesktopError.message("No built-in MacBook display was found.")
+        stop()
+        isWaitingForDisplay = true
+        return
       }
       let ownApplications = content.applications.filter {
         $0.processID == ProcessInfo.processInfo.processIdentifier
@@ -222,7 +254,7 @@ final class LiveDesktop: NSObject, ObservableObject {
       configuration.sourceRect = CGRect(
         x: area.minX - screen.frame.minX, y: screen.frame.maxY - area.maxY, width: area.width,
         height: area.height)
-      let scale = min(screen.backingScaleFactor, 2400 / area.width)
+      let scale = min(screen.backingScaleFactor, 2800 / area.width, 1.6)
       configuration.width = Int(area.width * scale) / 2 * 2
       configuration.height = Int(area.height * scale) / 2 * 2
       configuration.minimumFrameInterval = CMTime(value: 1, timescale: 60)
@@ -239,7 +271,14 @@ final class LiveDesktop: NSObject, ObservableObject {
         Task { @MainActor in
           guard let self, self.session == session else { return }
           self.stop()
-          self.error = failure.localizedDescription
+          let now = CACurrentMediaTime()
+          guard now - self.lastCaptureRecovery > 5 else {
+            self.error = failure.localizedDescription
+            return
+          }
+          self.lastCaptureRecovery = now
+          self.isWaitingForDisplay = true
+          self.refreshDisplay(after: .seconds(1))
         }
       }
       let stream = SCStream(filter: filter, configuration: configuration, delegate: frames)
@@ -253,7 +292,8 @@ final class LiveDesktop: NSObject, ObservableObject {
         guard let self, self.session == session else { return }
         if let failure {
           self.stop()
-          self.error = "The desktop renderer stopped: \(failure.localizedDescription)"
+          self.error = String(
+            localized: "The desktop renderer stopped: \(failure.localizedDescription)")
         }
       }
       renderer.onRest = { [weak self] in self?.restOverlay() }
@@ -269,7 +309,9 @@ final class LiveDesktop: NSObject, ObservableObject {
         guard CACurrentMediaTime() < deadline else {
           needsPermission = true
           throw DesktopError.message(
-            "No desktop frames arrived. Check Screen Recording permission and reopen Hinge.")
+            String(
+              localized:
+                "No desktop frames arrived. Check Screen Recording permission and reopen Hinge."))
         }
         try await Task.sleep(for: .milliseconds(10))
       }
@@ -282,7 +324,20 @@ final class LiveDesktop: NSObject, ObservableObject {
     } catch {
       guard self.session == session else { return }
       stop()
-      self.error = error.localizedDescription
+      if builtInScreenAvailable {
+        self.error = error.localizedDescription
+      } else {
+        isWaitingForDisplay = true
+      }
+    }
+  }
+
+  private var builtInScreenAvailable: Bool {
+    NSScreen.screens.contains {
+      guard
+        let number = $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+      else { return false }
+      return CGDisplayIsBuiltin(number.uint32Value) != 0
     }
   }
 
@@ -316,7 +371,8 @@ final class LiveDesktop: NSObject, ObservableObject {
     } catch {
       guard session == currentSession else { return }
       stop()
-      self.error = "Could not update the captured windows: \(error.localizedDescription)"
+      self.error = String(
+        localized: "Could not update the captured windows: \(error.localizedDescription)")
     }
   }
 
@@ -405,12 +461,14 @@ final class LiveDesktop: NSObject, ObservableObject {
     displayLink?.isPaused = true
   }
 
-  private func refreshDisplay() {
-    guard isActive, !resumeAfterWake else { return }
+  private func refreshDisplay(after delay: Duration = .milliseconds(300)) {
+    guard isActive || isWaitingForDisplay, !resumeAfterWake else { return }
     displayTask?.cancel()
     displayTask = Task { [weak self] in
-      do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-      guard let self, self.isActive, !self.resumeAfterWake else { return }
+      do { try await Task.sleep(for: delay) } catch { return }
+      guard let self, self.isActive || self.isWaitingForDisplay, !self.resumeAfterWake else {
+        return
+      }
       self.displayTask = nil
       self.stop()
       await self.start()
@@ -418,7 +476,7 @@ final class LiveDesktop: NSObject, ObservableObject {
   }
 
   private func suspendForSleep() {
-    resumeAfterWake = resumeAfterWake || isActive || isStarting
+    resumeAfterWake = resumeAfterWake || isActive || isStarting || isWaitingForDisplay
     stop(preserveResume: true)
     sensor.stop()
   }
@@ -476,6 +534,7 @@ final class LiveDesktop: NSObject, ObservableObject {
     includedWindowIDs = []
     isActive = false
     isStarting = false
+    isWaitingForDisplay = false
   }
 
   func shutDown() {
